@@ -1,11 +1,10 @@
-function [resd] =  plot_density(asize, cbk, crod, cxtal)
+function [resd] =  plot_density(asize, cbk, crod, cxtal, coarse)
 
     global nx mtx_xtal mtx_rod q_spl aa_spln_y occ_bkb xtal_pos
-	mtx_rod_d = double(mtx_rod);
 	mtx_xtal_d = double(mtx_xtal);
 	rho=zeros(nx,nx);
-	bk = mtx_rod_d.*mtx_xtal_d;
-	rho = cbk*bk + crod*((1-mtx_rod_d).*mtx_xtal_d) + cxtal*(1-mtx_xtal_d);  %the resulting density map in 3D
+	bk = mtx_xtal_d;
+	rho = cbk*bk +  cxtal*(1-mtx_xtal_d);  %the resulting density map in 3D
 
     [In, Iq] = SAXSrodcylformfac(rho);
     
@@ -44,7 +43,7 @@ function [resd] =  plot_density(asize, cbk, crod, cxtal)
     
     lgh = nx;
     
-    for cnt = 1:4
+    for cnt = 1:coarse
     rd_mtx = zeros(lgh/2,lgh/2);
         for kk = 1:2:lgh
             k = (kk+1)/2;
@@ -62,13 +61,15 @@ function [resd] =  plot_density(asize, cbk, crod, cxtal)
     
     figure
     pcolor(rd_mtx);
-    lmt = 170;
+
+
+    lmt = 120;
     rho_0 = sum(sum(1-mtx_xtal))/(nx^2);
     pdf_aa = rdf(xtal_pos);
     l_aa = 1:length(pdf_aa);
     l_aa = l_aa*asize;
     for i = 1:length(pdf_aa)
-        pdf_aa(i) = pdf_aa(i)/(4*pi*(l_aa(i)^2)*rho_0);
+        pdf_aa(i) = pdf_aa(i)/(2*pi*(l_aa(i))*rho_0);
     end
     figure
     plot(l_aa(1:lmt),pdf_aa(1:lmt),'LineWidth',1.2);

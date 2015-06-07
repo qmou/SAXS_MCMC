@@ -1,8 +1,7 @@
 clear all
-global nx mtx_xtal mtx_rod occ_xtal occ_bkb egyf
+global nx mtx_xtal occ_xtal occ_bkb egyf
 global xtal_pos xtal_sidex xtal_sidey xtal_bkbexcl scl
 global n_acpt
-global a_slot kk kr a_max
 nx=2048;
 rg_size = 128;
 
@@ -14,7 +13,7 @@ xtal_sidey = int16([]);
 xtal_bkbexcl = int16([]);
 %% crystal parameter
 disp('---> define crystal phase');
-xtal_life = 1000000;   %squre crystal count
+xtal_life = 2000000;   %squre crystal count
 if xtal_life > 0
     xtal_minlength = 6;
     xtal_maxlength = 8;
@@ -27,10 +26,10 @@ if xtal_life > 0
     axtal_range = xtal_asqmax-xtal_asqmin;
 %     xtal_exclu_inter = 3.2;
     xtal_exclu_inter = 4.0;
-    xtal_eocc_bkb = 1.6; %was 2.2
+    xtal_eocc_bkb = 1.8; %was 2.2
 end
 
-occ_xtal = int8(zeros(nx,nx));   %book keeping of excluded region, hard shell replusive model
+occ_xtal = int16(zeros(nx,nx));   %book keeping of excluded region, hard shell replusive model
 occ_bkb = int16(zeros(nx,nx));      %exclude region for backbone, more relax than occ_xtal
 %%
 disp('---> define amorphous phase, long rod configuration');
@@ -54,7 +53,7 @@ rg_cnt = nx/rg_size;
 rg_cnt_half = rg_cnt/2;
 %%
 disp('---> generating crystal phase');
-mtx_rod=int8(ones(nx,nx));  
+%mtx_rod=int8(ones(nx,nx));  
 mtx_xtal = int8(ones(nx,nx));
 
 n_xtal = 0;
@@ -144,56 +143,56 @@ end  %rod_lifemult
 %%
 % assign contribution of diffraction for different structures
 
-load 'silk_pfclean'
+%load 'silk_pfclean'
+load 'saxs_extrap'
 global q_spl aa_spln_y
+global kT t_acpt
 
-q_spl = 0.155:0.005:1.2;
-aa_spl_y = spline(nc_new_x, nc_new_y, q_spl);
+q_spl = 0.115:0.005:1.2;
+aa_spl_y = spline(nc_x, nc_y, q_spl);
 aa_spln_y = aa_spl_y/aa_spl_y(1);
 
 xtal_pop = length(xtal_pos);
-egyf = post_p_test(mtx_xtal, scl, 1.85);
+egyf = post_p_test(mtx_xtal, scl, 1.85)
+kT = 0.045;
 
 kk = 0;
 n_acpt = 0;
-a_slot = zeros(200,1);
+t_acpt = 0;
+t_k = 0;
 %a_min = 0.96;
-a_max = 1.015;
-kr = 0;
+%a_max = 1.015;
+xtal_pop
 
+%%
 while egyf > 1e-3
 	xsed1 = floor(rand*xtal_pop);
 	xsed2 = floor(rand*xtal_pop);
-    
-    if modnozero(kk,2000) == 2000
-        a_max = max(a_slot);
-        if a_max < 1.01
-            a_max = 1.01;
-        end
-        if a_max <= 1.0
-            a_max = 1.005;
-        end
-    end
     
 	if xsed1 == 0
 		xsed1 = floor(rand*xtal_pop/2)+1;
 	end
 	if xsed2 == 0
 		xsed2 = floor(rand*xtal_pop/2)+1;
-	end
-
-	tmp = mc_move(nx,xsed1,xsed2);
-    
-    if tmp < egyf
-        egyf = tmp;
     end
     
-    if mod(kk,2000) == 0
-        disp(sprintf('[Engy]%7.5f, [Int]%d, [a_max]%4.3f, [a_min]%4.3f, [n_acpt]%d, [mc]%d', egyf, kk, a_max, min(a_slot), n_acpt, kr));
+    if (t_acpt >= 0.12*xtal_pop) || (t_k >=1.2*xtal_pop)
+        kT = 0.9*kT;
+        t_acpt = 0;
+        t_k = 0;
     end
+    
+	egyf = mc_move(nx,xsed1,xsed2);
+    
+    if mod(kk,1000) == 0
+        disp(sprintf('[Engy]%7.5f, [Int]%d,  [n_acpt]%d, [T]%6.4f, [t_acpt]%d, [t_k]%d', egyf, kk, n_acpt,kT,t_acpt,t_k));
+    end
+    
     kk = kk + 1;
+    t_k = t_k +1;
+    
     if kk > 10e5
       break
     end
 end
-sprintf('Accept No. %d, MC No. %d', n_acpt, kr)
+%sprintf('Accept No. %d, MC No. %d', n_acpt, kr)

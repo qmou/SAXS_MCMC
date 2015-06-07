@@ -2,9 +2,8 @@ function [engyf] = mc_move(nx, xsed1, xsed2)
 
 	global mtx_xtal occ_bkb
 	global xtal_pos xtal_sidex xtal_sidey xtal_bkbexcl scl
-	global n_acpt a_slot kk kr a_max
-	%move xtal 1
-        engyf = 10000;
+	global n_acpt kT t_acpt egyf
+    engyf = egyf;
         divx = 16;
         divy = 16;
     
@@ -78,28 +77,22 @@ function [engyf] = mc_move(nx, xsed1, xsed2)
     	end
 	
 	% MCMC
-    	eng_i = post_p_test(mtx_xtal, scl, 1.85);
+    	eng_i = egyf;
     	eng_f = post_p_test(ttxtal_mtx, scl, 1.85);
 	
-	rto = eng_f/eng_i; %Q(x->x') is symetrical
+% 	rto = eng_f/eng_i; %Q(x->x') is symetrical
+% 	acpt = min(1,1/rto);   %acpt < 1 if the move increase energy
+% 	a_slot(modnozero(kk,200)) = rto;
+
+    dE = eng_f-eng_i;
+    p_accpt = exp(-dE/kT);
     
+    p_test = rand;
     
-	acpt = min(1,1/rto);   %acpt < 1 if the move increase energy
-	a_slot(modnozero(kk,200)) = rto;
-
-    	allow = 0;
-	
-	if rto < 1
-		allow = 1;
-	end
-
-	if acpt < 1 && rand < 0.2*gaus(acpt, 1, a_max-1 )
-		allow = 1;
-		kr = kr + 1;
-	end
-
-    	if allow > 0
+	if p_test < p_accpt
+        engyf = eng_f;
 		n_acpt = n_acpt + 1;
+        t_acpt = t_acpt + 1;
     		mtx_xtal = ttxtal_mtx;
 
     		exlcu1x = xtal_bkbexcl(xsed1,1);
@@ -138,7 +131,7 @@ function [engyf] = mc_move(nx, xsed1, xsed2)
                       	occ_bkb(jxplusj,kyplusk)=occ_bkb(jxplusj,kyplusk)+1;
             	end
     		end
-    		engyf = eng_f;
+
             xtal_pos(xsed1,1) = pos1x_new;
             xtal_pos(xsed1,2) = pos1y_new;
             xtal_pos(xsed2,1) = pos2x_new;

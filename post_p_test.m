@@ -2,13 +2,13 @@ function [resd] =  post_p_test(ttmtx, asize, cxtal)
 
     global nx q_spl aa_spln_y
 
-    [In, Iq] = SAXSrodcylformfac(double(cxtal*(1-ttmtx)));
+    [In, ~] = SAXSrodcylformfac(double(cxtal*(1-ttmtx)));
     
     switch nx
-        case 256
-            rdc = 1;
-        case 1024
-            rdc = 3;
+%         case 256
+%             rdc = 1;
+%         case 1024
+%             rdc = 3;
         case 2048
             rdc = 3;
         case 4096
